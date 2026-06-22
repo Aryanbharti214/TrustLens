@@ -1,26 +1,31 @@
+print("STEP 1: app.py started")
 import os
 import sys
 from dotenv import load_dotenv
 load_dotenv()
-
+print("STEP 2: dotenv loaded")
 # Startup Validation - fail fast if any key is missing in .env
 for key in ["GEMINI_API_KEY", "GROQ_API_KEY", "HF_API_KEY"]:
     val = os.getenv(key)
     if not val:
         print(f"Missing {key} in .env")
         sys.exit(1)
-
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 import json
 import trust_companion_service as service
+print("STEP 3: trust_companion_service imported")
 import multi_agent_service
+print("STEP 4: multi_agent_service imported")
 import autonomy_service
+print("STEP 5: autonomy_service imported")
 
 app = FastAPI(title="TrustLens AI Trust Companion API")
-
+print("STEP 6: FastAPI created")
 # Add CORS Middleware to support local dev routing
 app.add_middleware(
     CORSMiddleware,
@@ -217,8 +222,27 @@ def test_connection(provider: str):
             
     else:
         raise HTTPException(status_code=400, detail="Unknown provider")
+# Serve React static assets
+app.mount(
+    "/assets",
+    StaticFiles(directory="dist/assets"),
+    name="assets"
+)
 
+# Root page
+@app.get("/")
+async def serve_root():
+    return FileResponse("dist/index.html")
+@app.get("/{full_path:path}")
+async def serve_spa(full_path: str):
+    if full_path.startswith("api"):
+        raise HTTPException(status_code=404)
+    return FileResponse("dist/index.html")
 if __name__ == "__main__":
     import uvicorn
     # Run server on port 8000
-    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(
+    "app:app",
+    host="0.0.0.0",
+    port=int(os.environ.get("PORT", 8000))
+)
