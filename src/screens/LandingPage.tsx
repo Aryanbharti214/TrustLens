@@ -25,7 +25,7 @@ export default function LandingPage({
   return (
     <iframe
       title="landing"
-      src="/landing.html"
+      src={`${window.location.origin}/landing.html`}
       style={{
         width: "100%",
         height: "100vh",
