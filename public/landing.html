@@ -516,6 +516,17 @@
     document.getElementById("loginBtn")?.addEventListener("click", () => {
         parent.postMessage("ENTER_APP", "*");
     });
+window.onload = () => {
+  document.body.style.opacity = "1";
+
+  const hero = document.getElementById("hero-content");
+
+  if(hero){
+      hero.style.opacity = "1";
+      hero.style.transform = "translateY(0)";
+  }
+}
+
 </script>
 </body>
 </html>
