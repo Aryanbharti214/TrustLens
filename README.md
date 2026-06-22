@@ -469,8 +469,3 @@ src="/landing.html"
 
 ---
 
-# Authors
-
-TrustLens AI Team
-
-Developed as an AI Transparency & Explainability Platform for Security Operations.
