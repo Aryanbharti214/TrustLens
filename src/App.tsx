@@ -109,9 +109,17 @@ const AppContent: React.FC = () => {
 
 function App() {
   return (
-    <WorkflowProvider>
-      <AppContent />
-    </WorkflowProvider>
+    <div
+      style={{
+        background: "red",
+        color: "white",
+        fontSize: "40px",
+        minHeight: "100vh",
+        padding: "50px",
+      }}
+    >
+      APP IS RENDERING
+    </div>
   );
 }
 
