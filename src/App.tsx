@@ -78,23 +78,29 @@ const MainLayout: React.FC = () => {
 
 const AppContent: React.FC = () => {
   const { user, loading } = useWorkflow();
-  const [showLanding, setShowLanding] = React.useState(true);
+
+  const [showLanding, setShowLanding] = React.useState(() => {
+    return sessionStorage.getItem("landing_seen") !== "true";
+  });
+
+  const enterApp = () => {
+    sessionStorage.setItem("landing_seen", "true");
+    setShowLanding(false);
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center font-sans">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="w-12 h-12 rounded-full border-4 border-brand-blue border-t-transparent animate-spin"></div>
-          <p className="text-slate-500 font-semibold text-sm">Verifying session...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
       </div>
     );
   }
 
+  if (showLanding) {
+    return <LandingPage onEnterApp={enterApp} />;
+  }
+
   if (!user) {
-    if (showLanding) {
-      return <LandingPage onEnterApp={() => setShowLanding(false)} />;
-    }
     return <LoginPage onLogin={() => {}} />;
   }
 

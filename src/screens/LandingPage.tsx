@@ -4,19 +4,27 @@ interface LandingPageProps {
   onEnterApp: () => void;
 }
 
-export default function LandingPage({ onEnterApp }: LandingPageProps) {
+export default function LandingPage({
+  onEnterApp,
+}: LandingPageProps) {
+
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.data === "ENTER_APP") {
         onEnterApp();
       }
     };
+
     window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
+
+    return () => {
+      window.removeEventListener("message", handleMessage);
+    };
   }, [onEnterApp]);
 
   return (
     <iframe
+      title="landing"
       src="/landing.html"
       style={{
         width: "100%",
