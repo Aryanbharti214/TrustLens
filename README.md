@@ -3,7 +3,21 @@
 AI-Powered Transparent Security Decision Intelligence Platform
 
 ---
+## Live Demo
 
+Deployed Application: https://trustlensai-taga.onrender.com
+
+Experience the platform live and explore:
+
+* Multi-Agent AI Decision Workflow
+* Trust Companion Interface
+* AI Explainability Dashboard
+* Human-in-the-Loop Governance
+* Trust Time Machine Analytics
+* AI Transparency & Validation Features
+
+
+--- 
 ## Overview
 
 TrustLens AI is a multi-agent security intelligence platform that provides explainable AI recommendations for enterprise security operations.
@@ -118,7 +132,7 @@ Python 3.11+
 # Clone Repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/Aryanbharti214/TrustLens/
 cd trustlens-ai
 ```
 
