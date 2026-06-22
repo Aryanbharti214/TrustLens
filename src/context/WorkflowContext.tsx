@@ -218,7 +218,7 @@ export const WorkflowProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   // Supabase Auth Integration States & Methods
   const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const handleAuthSession = async (session: any) => {
     if (session?.user) {
