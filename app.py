@@ -2,14 +2,17 @@ print("STEP 1: app.py started")
 import os
 import sys
 from dotenv import load_dotenv
+from pathlib import Path
 load_dotenv()
 print("STEP 2: dotenv loaded")
+
 # Startup Validation - fail fast if any key is missing in .env
 for key in ["GEMINI_API_KEY", "GROQ_API_KEY", "HF_API_KEY"]:
     val = os.getenv(key)
     if not val:
         print(f"Missing {key} in .env")
         sys.exit(1)
+
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi import FastAPI, Depends, HTTPException
@@ -26,6 +29,7 @@ print("STEP 5: autonomy_service imported")
 
 app = FastAPI(title="TrustLens AI Trust Companion API")
 print("STEP 6: FastAPI created")
+
 # Add CORS Middleware to support local dev routing
 app.add_middleware(
     CORSMiddleware,
@@ -53,6 +57,8 @@ class FeedbackRequest(BaseModel):
 
 class AutonomyLevelRequest(BaseModel):
     level: int
+
+# ── API Routes ────────────────────────────────────────────────────────────────
 
 @app.get("/trust-chat/{recommendation_id}")
 def get_chat_state(recommendation_id: str, db=Depends(get_db)):
@@ -136,7 +142,7 @@ def get_api_status():
     gemini_key = os.getenv("GEMINI_API_KEY")
     groq_key = os.getenv("GROQ_API_KEY")
     hf_key = os.getenv("HF_API_KEY")
-    
+
     def is_configured(val):
         if not val:
             return False
@@ -144,7 +150,7 @@ def get_api_status():
         if "placeholder" in val_lower or "your_" in val_lower or val.startswith("xxxx") or len(val) < 5:
             return False
         return True
-        
+
     return {
         "gemini": is_configured(gemini_key),
         "groq": is_configured(groq_key),
@@ -155,7 +161,7 @@ def get_api_status():
 def test_connection(provider: str):
     """Perform a health check on the specified AI provider API."""
     import requests
-    
+
     if provider == "gemini":
         key = os.getenv("GEMINI_API_KEY")
         if not key:
@@ -167,13 +173,10 @@ def test_connection(provider: str):
         }
         try:
             resp = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=5)
-            if resp.status_code == 200:
-                return {"status": "Connected Successfully"}
-            else:
-                return {"status": "Connection Failed"}
-        except Exception as e:
+            return {"status": "Connected Successfully"} if resp.status_code == 200 else {"status": "Connection Failed"}
+        except Exception:
             return {"status": "Connection Failed"}
-            
+
     elif provider == "groq":
         key = os.getenv("GROQ_API_KEY")
         if not key:
@@ -190,13 +193,10 @@ def test_connection(provider: str):
         }
         try:
             resp = requests.post(url, json=payload, headers=headers, timeout=5)
-            if resp.status_code == 200:
-                return {"status": "Connected Successfully"}
-            else:
-                return {"status": "Connection Failed"}
-        except Exception as e:
+            return {"status": "Connected Successfully"} if resp.status_code == 200 else {"status": "Connection Failed"}
+        except Exception:
             return {"status": "Connection Failed"}
-            
+
     elif provider == "huggingface":
         key = os.getenv("HF_API_KEY")
         if not key:
@@ -206,43 +206,71 @@ def test_connection(provider: str):
             "Authorization": f"Bearer {key}",
             "Content-Type": "application/json"
         }
-        payload = {
-            "inputs": "ping"
-        }
+        payload = {"inputs": "ping"}
         try:
             resp = requests.post(url, json=payload, headers=headers, timeout=5)
             if resp.status_code in [200, 201, 503]:
                 if resp.status_code == 503 and "loading" not in resp.text.lower():
                     return {"status": "Connection Failed"}
                 return {"status": "Connected Successfully"}
-            else:
-                return {"status": "Connection Failed"}
-        except Exception as e:
             return {"status": "Connection Failed"}
-            
+        except Exception:
+            return {"status": "Connection Failed"}
+
     else:
         raise HTTPException(status_code=400, detail="Unknown provider")
-# Serve React static assets
-app.mount(
-    "/assets",
-    StaticFiles(directory="dist/assets"),
-    name="assets"
-)
 
-# Root page
+
+# ── Static File Serving ───────────────────────────────────────────────────────
+
+# Mount /assets directory for JS/CSS bundles
+dist_assets = Path("dist/assets")
+if dist_assets.exists():
+    app.mount("/assets", StaticFiles(directory=str(dist_assets)), name="assets")
+
+# Explicit static file routes
+@app.get("/favicon.svg")
+async def favicon():
+    return FileResponse("dist/favicon.svg")
+
+@app.get("/icons.svg")
+async def icons():
+    return FileResponse("dist/icons.svg")
+
+@app.get("/landing.html")
+async def landing():
+    return FileResponse("dist/landing.html")
+
+# Root — serve React app
 @app.get("/")
 async def serve_root():
     return FileResponse("dist/index.html")
+
+# SPA catch-all — serve index.html for all frontend routes,
+# serve actual dist files if they exist, 404 API paths
 @app.get("/{full_path:path}")
 async def serve_spa(full_path: str):
-    if full_path.startswith("api"):
+    # Block API route paths from falling through to SPA
+    api_prefixes = [
+        "trust-chat", "agent-chain", "autonomy-level",
+        "api-status", "test-connection"
+    ]
+    if any(full_path.startswith(p) for p in api_prefixes):
         raise HTTPException(status_code=404)
+
+    # If the file physically exists in dist/, serve it directly
+    file_path = Path("dist") / full_path
+    if file_path.exists() and file_path.is_file():
+        return FileResponse(str(file_path))
+
+    # Otherwise fall back to SPA index
     return FileResponse("dist/index.html")
+
+
 if __name__ == "__main__":
     import uvicorn
-    # Run server on port 8000
     uvicorn.run(
-    "app:app",
-    host="0.0.0.0",
-    port=int(os.environ.get("PORT", 8000))
-)
+        "app:app",
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", 8000))
+    )
